@@ -1,0 +1,41 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>RIPE Atlas by ASNs</title>
+</head>
+<body style="width:40em;">
+<form id="addrform">
+<input type="text" id="sourceaddr" placeholder="Enter IP address"/>
+<input type="submit" />
+</form>
+<div id="mapwdg"></div>
+
+</body>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="https://stat.ripe.net/widgets/widget_api.js"></script>
+<script>
+    var staturl = "https://stat.ripe.net/data";
+    var mapw = ripestat.init("atlas-probes", {}, "mapwdg", {"show_controls":"yes","disable":[]});
+
+    function getASN(ip) {
+        $.getJSON(staturl + "/prefix-overview/data.json?max_related=0&resource="
+                  + ip + "&callback=?", function(data) {
+                if (data.status == "ok" && data.data.asns.length >= 1) {
+                    var asn = "AS" + data.data.asns[0].asn
+                    mapw.update({"resource":asn});
+                }
+            });
+    }
+    $.getJSON(staturl + "/whats-my-ip/data.json?callback=?", function(data) {
+        var ip = data.data.ip
+        getASN(ip);
+        });
+    $(document).ready(function(){
+        $("#addrform").submit(function( event ) {
+            getASN($("#sourceaddr").val());
+            return false;
+        });
+    });
+</script>
+
+</html>

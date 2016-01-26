@@ -4,13 +4,17 @@
       <meta charset="utf-8" />
       <title>CESNET volá o pomoc</title>
       <style>
-.text { text-align:center; font-size: 32pt; }
+.cen { text-align:center; }
 #counter { font-size: 72pt; font-decoration: bold; }
+#heading { font-size: 32pt; }
+#footer  { font-size: 16pt; }
       </style>
   </head>
   <body>
-    <p class="text">Sdružení CESNET chybí v této chvíli na provoz:
-      <div class="text" id="counter"></div>
+    <p class="cen">
+      <div class="cen" id="heading"></div>
+      <div class="cen" id="counter"></div>
+      <div class="cen" id="footer"></div>
     </p>
   </body>
   <script>
@@ -24,13 +28,20 @@ function updateDebt(domdata) {
   var now = new Date()
   var debtnow = (now - startdate) * debtperms
   var counter = document.getElementById("counter");
-  counter.innerHTML= debtnow.toLocaleString(undefined, {"style":"currency", "currency":"CZK"});
+  counter.innerHTML= debtnow.toLocaleString(undefined, {"style":"currency",
+                                                        "currency":"CZK"});
   var refreshms = (1 - debtnow%1)/debtperms
   setTimeout(updateDebt, refreshms);
 }
 
 window.onload = function() {
+  document.getElementById("heading").innerHTML = "Sdružení CESNET chybí " +
+                                               "v této chvíli na provoz:";
   updateDebt();
+  document.getElementById("footer").innerHTML = "Celková částka chybějící " +
+      "v rozpočtu na rok 2016 je " + totaldebt.toLocaleString(undefined,
+                                                  {"style":"currency",
+                                                    "currency":"CZK"}); 
 }
   </script>
 </html>

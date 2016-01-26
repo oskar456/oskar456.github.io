@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+      <meta charset="utf-8" />
+      <title>CESNET volá o pomoc</title>
+      <style>
+.text { text-align:center; font-size: 32pt; }
+#counter { font-size: 72pt; font-decoration: bold; }
+      </style>
+  </head>
+  <body>
+    <p class="text">Sdružení CESNET mělo do této chvíle získat:
+      <div class="text" id="counter"></div>
+    </p>
+  </body>
+  <script>
+totaldebt = 28300000;
+duedate = new Date(2017, 0)
+startdebt = 0;
+startdate = new Date(2016, 0)
+debtperms = (totaldebt - startdebt) / (duedate-startdate)
+
+function updateDebt(domdata) {
+  var now = new Date()
+  var debtnow = (now - startdate) * debtperms
+  var counter = document.getElementById("counter");
+  counter.innerHTML= Math.round(debtnow).toLocaleString() + "&nbsp;Kč";
+  var refreshms = (1 - debtnow%1)/debtperms
+  setTimeout(updateDebt, refreshms);
+}
+
+window.onload = function() {
+  updateDebt();
+}
+  </script>
+</html>

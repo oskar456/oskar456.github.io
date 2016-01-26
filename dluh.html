@@ -24,7 +24,7 @@ function updateDebt(domdata) {
   var now = new Date()
   var debtnow = (now - startdate) * debtperms
   var counter = document.getElementById("counter");
-  counter.innerHTML= Math.round(debtnow).toLocaleString() + "&nbsp;Kč";
+  counter.innerHTML= debtnow.toLocaleString(undefined, {"style":"currency", "currency":"CZK"});
   var refreshms = (1 - debtnow%1)/debtperms
   setTimeout(updateDebt, refreshms);
 }

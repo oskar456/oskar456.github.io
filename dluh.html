@@ -2,7 +2,7 @@
 <html lang="cs">
   <head>
       <meta charset="utf-8" />
-      <title>CESNET volá o pomoc</title>
+      <title>Dluh CESNETu</title>
       <style>
 .cen { text-align:center; }
 #counter { font-size: 72pt; font-decoration: bold; }
@@ -18,15 +18,16 @@
     </p>
   </body>
   <script>
-totaldebt = 20320000;
-duedate = new Date(2017, 0)
-startdebt = 0;
-startdate = new Date(2016, 0)
-debtperms = (totaldebt - startdebt) / (duedate-startdate)
+tenpercent = 20320000;
+totaldebt2017 = 2*tenpercent + tenpercent;
+startdebt = tenpercent;
+startdate = new Date(2017, 0)
+duedate = new Date(2018, 0)
+debtperms = (totaldebt2017 - startdebt) / (duedate-startdate)
 
 function updateDebt(domdata) {
   var now = new Date()
-  var debtnow = (now - startdate) * debtperms
+  var debtnow = startdebt + (now - startdate) * debtperms
   var counter = document.getElementById("counter");
   counter.innerHTML= debtnow.toLocaleString(undefined, {"style":"currency",
                                                         "currency":"CZK"});
@@ -39,9 +40,9 @@ window.onload = function() {
                                                "v této chvíli na provoz:";
   updateDebt();
   document.getElementById("footer").innerHTML = "Celková částka chybějící " +
-      "v rozpočtu na rok 2016 je " + totaldebt.toLocaleString(undefined,
-                                                  {"style":"currency",
-                                                    "currency":"CZK"}); 
+      "v rozpočtu na rok 2016 je " + tenpercent.toLocaleString(undefined,
+      {"style":"currency", "currency":"CZK"}) + ".<br>Pro roky 2017–2022 " +
+      "chybí dokonce dvojnásobná částka.";
 }
   </script>
 </html>

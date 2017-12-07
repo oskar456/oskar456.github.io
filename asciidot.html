@@ -70,19 +70,22 @@ window.onload = function(){
   });
 
   var savebtn = document.querySelector('#savebtn');
-  savebtn.addEventListener('click', function(e) {
-    download(input.value + "-asciicode.svg", draw.svg());
-  })
-
-  function download(filename, svgdata) {
-    var element = document.createElement('a');
-    element.setAttribute('href', 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgdata));
-    element.setAttribute('download', filename);
-    element.style.display = 'none';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+  savebtn.addEventListener('click', saveSvg(draw));
+  function saveSvg(draw) {
+    function download(filename, svgdata) {
+      var element = document.createElement('a');
+      element.setAttribute('href', 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgdata));
+      element.setAttribute('download', filename);
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    }
+    return function() {
+      download(input.value + "-asciicode.svg", draw.svg());
+    };
   }
+
 };//]]> 
   </script>
   <!-- Global site tag (gtag.js) - Google Analytics -->

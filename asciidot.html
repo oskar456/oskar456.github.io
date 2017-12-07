@@ -55,9 +55,10 @@ window.onload = function(){
       }
       for (var i = 0, len = binstring.length; i < len; i++) {
         var y = (binstring.charAt(i) == "1")? 10 : 20;
-        nested.use(dot).move(16*i, y);
+        nested.use(dot).move(10 + 16*i, y);
       }
-      var vbwidth = Math.max(400, 16*binstring.length);
+      // 10 mezera zleva a zprava plus 10 sirka + 16*pocet mezer
+      var vbwidth = Math.max(400, 30 + 16*(binstring.length-1));
       draw.viewbox(0, 0, vbwidth, 40);
     };
   }

@@ -179,7 +179,15 @@ window.onload = function(){
       document.body.removeChild(element);
     }
     return function() {
-      download(input.value + "-asciicode.svg", draw.svg());
+      var bbox = draw.bbox()
+      draw.viewbox(0, 0, 2*size + bbox.w, 2*size + bbox.h);
+      var fname = input.value + "asciidots"
+      if (grid > 1.6*size)
+        fname += "-grid" + (grid-size)/size*100;
+      if (perrow > 0)
+        fname += "-" + perrow + "perrow";
+      fname += ".svg";
+      download(fname, draw.svg());
     };
   }
 

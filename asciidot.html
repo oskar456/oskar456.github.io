@@ -82,8 +82,12 @@
 window.onload = function(){
   var input = document.querySelector('#src');
   var draw = SVG('drawing');
-  var dot = draw.defs().rect(10, 10).fill("#5a5a5a");
+  var size = 10;
+  var dot = draw.defs().rect(size, size).fill("#5a5a5a");
   var nested = draw.nested();
+  var grid = 1.6*size;  // space should be 60% of dot size
+  var perrow = 0;
+  var vgrid = grid;
 
   input.addEventListener('keyup', updateDots(draw, nested));
   function updateDots(draw, nested) {
@@ -95,13 +99,26 @@ window.onload = function(){
       for (var i = 0, len = text.length; i < len; i++) {
         binstring += ("000000" + text.charCodeAt(i).toString(2)).substr(-7);
       }
+      var row = 0;
+      var x, y;
       for (var i = 0, len = binstring.length; i < len; i++) {
-        var y = (binstring.charAt(i) == "1")? 10 : 20;
-        nested.use(dot).move(10 + 16*i, y);
+        if (perrow > 0) {
+          row = Math.floor(i / perrow);
+          x = size + grid * (i % perrow);
+        } else {
+          x = size + grid*i;
+        }
+        y = size + row*(size+vgrid);
+        if (binstring.charAt(i) == "0")
+          y += size;
+        nested.use(dot).move(x, y);
       }
-      // 10 mezera zleva a zprava plus 10 sirka + 16*pocet mezer
-      var vbwidth = Math.max(400, 30 + 16*(binstring.length-1));
-      draw.viewbox(0, 0, vbwidth, 40);
+      // one size dot + one size each margin + grid*number of spaces
+      var vbwidth = Math.max(400, 3*size +
+                             grid*((perrow > 0?perrow:binstring.length)-1)
+                            );
+      var vbheight = 4*size + (size+vgrid)*row;
+      draw.viewbox(0, 0, vbwidth, vbheight);
     };
   }
 

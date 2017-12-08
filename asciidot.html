@@ -136,6 +136,36 @@ window.onload = function(){
     };
   }
 
+  var gridsel = document.querySelector('#grid');
+  gridsel.addEventListener('input', changeGrid());
+  function changeGrid() {
+    return function() {
+      var newgrid = parseFloat(this.value);
+      if (newgrid > 0) {
+        grid = newgrid*size;
+        vgrid = (newgrid>2)? 2*size: grid;
+      }
+      input.dispatchEvent(new Event('keyup'));
+    };
+  }
+
+  var perrowsel = document.querySelector('#perrow');
+  perrowsel.addEventListener('input', changePerrow());
+  function changePerrow() {
+    return function() {
+      var newperrow = parseInt(this.value);
+      perrow = (newperrow > 0)? newperrow: 0;
+      if (perrow > 0 && grid < 2*size) {
+        gridsel.selectedIndex = 1;
+        gridsel.dispatchEvent(new Event('input'));
+      } else if (perrow == 0 && grid > 1.6*size) {
+        gridsel.selectedIndex = 0;
+        gridsel.dispatchEvent(new Event('input'));
+      } else
+        input.dispatchEvent(new Event('keyup'));
+    };
+  }
+
   var savebtn = document.querySelector('#savebtn');
   savebtn.addEventListener('click', saveSvg(draw));
   function saveSvg(draw) {

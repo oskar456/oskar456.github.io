@@ -17,8 +17,11 @@
       width: 12em;
       margin-left: -1em;
     }
-    header input[type=text] {
+    #src {
       width: 60%;
+    }
+    #perrow {
+      width: 4em;
     }
     header div {
       margin-top: 5px;
@@ -50,6 +53,25 @@
         <option value="#008547">
         <option value="#008185">
       </datalist>
+      <input id="perrow" list="perrowlist">
+      <datalist id="perrowlist">
+        <option value="7">
+        <option value="14">
+        <option value="21">
+        <option value="28">
+        <option value="35">
+        <option value="42">
+        <option value="56">
+        <option value="63">
+        <option value="70">
+      </datalist>
+      <label for="perrow">teček na řádek</label>,
+      <label for="grid">rastr</label>
+      <select id="grid">
+        <option value="1.6">60 %</option>
+        <option value="2">100 %</option>
+        <option value="3">200 %</option>
+      </select>
     </div>
   </header>
   <main>

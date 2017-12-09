@@ -89,7 +89,7 @@ window.onload = function(){
   var perrow = 0;
   var vgrid = grid;
 
-  input.addEventListener('keyup', updateDots(draw, nested));
+  input.addEventListener('input', updateDots(draw, nested));
   function updateDots(draw, nested) {
     return function() {
       nested.remove();
@@ -145,7 +145,7 @@ window.onload = function(){
         grid = newgrid*size;
         vgrid = (newgrid>2)? 2*size: grid;
       }
-      input.dispatchEvent(new Event('keyup'));
+      input.dispatchEvent(new Event('input'));
     };
   }
 
@@ -162,7 +162,7 @@ window.onload = function(){
         gridsel.selectedIndex = 0;
         gridsel.dispatchEvent(new Event('input'));
       } else
-        input.dispatchEvent(new Event('keyup'));
+        input.dispatchEvent(new Event('input'));
     };
   }
 

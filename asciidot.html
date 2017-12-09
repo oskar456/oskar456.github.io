@@ -84,16 +84,16 @@ window.onload = function(){
   var draw = SVG('drawing');
   var size = 10;
   var dot = draw.defs().rect(size, size).fill("#5a5a5a");
-  var nested = draw.nested();
+  var group = draw.group();
   var grid = 1.6*size;  // space should be 60% of dot size
   var perrow = 0;
   var vgrid = grid;
 
-  input.addEventListener('input', updateDots(draw, nested));
-  function updateDots(draw, nested) {
+  input.addEventListener('input', updateDots(draw, group));
+  function updateDots(draw, group) {
     return function() {
-      nested.remove();
-      nested = draw.nested();
+      group.remove();
+      group = draw.group();
       var text = this.value;
       var binstring = "";
       for (var i = 0, len = text.length; i < len; i++) {
@@ -111,7 +111,7 @@ window.onload = function(){
         y = size + row*(size+vgrid);
         if (binstring.charAt(i) == "0")
           y += size;
-        dot.clone().move(x, y).putIn(nested);
+        dot.clone().move(x, y).putIn(group);
       }
       // one size dot + one size each margin + grid*number of spaces
       var vbwidth = Math.max(400, 3*size +

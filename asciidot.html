@@ -172,7 +172,8 @@ window.onload = function(){
   function saveSvg(draw) {
     function download(filename, svgdata) {
       var element = document.createElement('a');
-      element.setAttribute('href', 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgdata));
+      var dataBlob = new Blob([svgdata], {type: 'image/svg+xml'})
+      element.setAttribute('href', URL.createObjectURL(dataBlob));
       element.setAttribute('download', filename);
       element.style.display = 'none';
       document.body.appendChild(element);

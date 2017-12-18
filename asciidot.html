@@ -111,7 +111,7 @@ window.onload = function(){
         y = size + row*(size+vgrid);
         if (binstring.charAt(i) == "0")
           y += size;
-        dot.clone().move(x, y).putIn(group);
+        group.use(dot).move(x, y);
       }
       // one size dot + one size each margin + grid*number of spaces
       var vbwidth = Math.max(400, 3*size +
@@ -133,7 +133,6 @@ window.onload = function(){
   function changeColor(dot) {
     return function() {
       dot.fill(this.value);
-      input.dispatchEvent(new Event('input'));
     };
   }
 

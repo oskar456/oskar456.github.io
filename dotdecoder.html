@@ -45,7 +45,7 @@ window.onload = function(){
   input.addEventListener('input', updateResult(result));
   function updateResult(result) {
     return function() {
-      var binstring = this.value.replace(/[O◊]/g, '1').replace(/[o♦]/g, '0')
+      var binstring = this.value.replace(/[O◊▘▝]/g, '1').replace(/[o♦▖▗]/g, '0')
       binstring = binstring.replace(/[^01]/g, '')
       var out = "";
       for (var i = 0, len = binstring.length; i+7 <= len; i+=7) {

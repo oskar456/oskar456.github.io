@@ -75,12 +75,16 @@
     </div>
   </header>
   <main>
+    <h2>SVG verze</h2>
     <div id="drawing"></div>
+    <h2>Textová verze</h2>
+    <p id="textout"></p>
   </main>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.6.3/svg.js"></script>
   <script type='text/javascript'>//<![CDATA[
 window.onload = function(){
   var input = document.querySelector('#src');
+  var textout = document.querySelector('#textout');
   var draw = SVG('drawing');
   var size = 10;
   var dot = draw.defs().rect(size, size).fill("#5a5a5a");
@@ -89,11 +93,12 @@ window.onload = function(){
   var perrow = 0;
   var vgrid = grid;
 
-  input.addEventListener('input', updateDots(draw, group));
-  function updateDots(draw, group) {
+  input.addEventListener('input', updateDots(draw, group, textout));
+  function updateDots(draw, group, textout) {
     return function() {
       group.remove();
       group = draw.group();
+      textout.innerHTML = "";
       var text = this.value;
       var binstring = "";
       for (var i = 0, len = text.length; i < len; i++) {
@@ -119,6 +124,12 @@ window.onload = function(){
                             );
       var vbheight = 4*size + (size+vgrid)*row;
       draw.viewbox(0, 0, vbwidth, vbheight);
+      for (var i = 0, len = binstring.length; i < len; i++) {
+        textout.innerHTML += binstring.charAt(i) == "0"? "▖": "▘";
+        if (i % perrow == perrow - 1) {
+          textout.innerHTML += "<br>";
+        }
+      }
     };
   }
 

@@ -4,8 +4,9 @@
  <title>Wordle helper</title>
  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
  <style>
-  input[type=text] { font-size: 200%; };
-  .wide { width: 100% };
+  input[type=text] { font-size: 200%; max-width: 1em; width: auto; }
+  td.form { white-space: nowrap; }
+  input[type=text].wide { max-width: 6em; }
  </style>
 </head>
 <body>
@@ -14,18 +15,18 @@
   <table>
    <tr>
     <td>Unused letters:</td>
-    <td><input type="text" class="wide" name="letters" value="" size=12 autofocus></td>
+    <td class="form"><input type="text" class="wide" name="letters" value="" autofocus></td>
    </tr>
    <tr>
     <td>Yellow letters:</td>
-    <td>
-      <input type="text" name="yl0" value="" size=1><input type="text" name="yl1" value="" size=1><input type="text" name="yl2" value="" size=1><input type="text" name="yl3" value="" size=1><input type="text" name="yl4" value="" size=1>
+    <td class="form">
+      <input type="text" name="yl0" value=""><input type="text" name="yl1" value=""><input type="text" name="yl2" value=""><input type="text" name="yl3" value=""><input type="text" name="yl4" value="">
     </td>
    </tr>
-   <tr>
+   <tr class="form">
     <td>Green letters:</td>
     <td>
-      <input type="text" name="gl0" value="" size=1><input type="text" name="gl1" value="" size=1><input type="text" name="gl2" value="" size=1><input type="text" name="gl3" value="" size=1><input type="text" name="gl4" value="" size=1>
+      <input type="text" name="gl0" value=""><input type="text" name="gl1" value=""><input type="text" name="gl2" value=""><input type="text" name="gl3" value=""><input type="text" name="gl4" value="">
     </td>
    </tr>
   </table>

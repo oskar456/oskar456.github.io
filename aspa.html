@@ -155,18 +155,45 @@ function draw() {
     ases.forEach((as, i) => {
         const x = startX + i * spacing;
 
-        if (i > 0) {
-            const prev = ases[i - 1];
-            const valid = isProvider(prev, as);
+      if (i > 0) {
+    const left = ases[i - 1];
+    const right = ases[i];
 
-            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            line.setAttribute("x1", x - spacing + r);
-            line.setAttribute("y1", y);
-            line.setAttribute("x2", x - r);
-            line.setAttribute("y2", y);
-            line.setAttribute("class", valid ? "link-valid" : "link-unknown");
-            svg.appendChild(line);
-        }
+    const x1 = x - spacing + r;
+    const x2 = x - r;
+
+    // base line (always)
+    const base = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    base.setAttribute("x1", x1);
+    base.setAttribute("y1", y);
+    base.setAttribute("x2", x2);
+    base.setAttribute("y2", y);
+    base.setAttribute("class", "link-unknown");
+    svg.appendChild(base);
+
+    // left → right provider
+    if (isProvider(left, right)) {
+        const arrow = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        arrow.setAttribute("x1", x1);
+        arrow.setAttribute("y1", y);
+        arrow.setAttribute("x2", x2);
+        arrow.setAttribute("y2", y);
+        arrow.setAttribute("class", "link-valid");
+        svg.appendChild(arrow);
+    }
+
+    // right → left provider
+    if (isProvider(right, left)) {
+        const arrow = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        arrow.setAttribute("x1", x2);
+        arrow.setAttribute("y1", y);
+        arrow.setAttribute("x2", x1);
+        arrow.setAttribute("y2", y);
+        arrow.setAttribute("class", "link-valid");
+        svg.appendChild(arrow);
+    }
+}
+
 
         const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         circle.setAttribute("cx", x);

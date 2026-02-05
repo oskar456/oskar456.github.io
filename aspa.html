@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AS PATH – ASPA Visualization</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+}
+
+input {
+    width: 360px;
+    padding: 6px;
+    font-size: 14px;
+}
+
+button {
+    padding: 6px 12px;
+    font-size: 14px;
+    margin-left: 8px;
+}
+
+svg {
+    margin-top: 30px;
+    border: 1px solid #ccc;
+    width: 100%;
+    height: 280px;
+}
+
+/* Nodes */
+.node {
+    stroke: #333;
+    stroke-width: 2;
+}
+
+.node-valid {
+    fill: #c8e6c9;
+}
+
+.node-unknown {
+    fill: #eeeeee;
+}
+
+/* Links */
+.link-valid {
+    stroke: #2e7d32;
+    stroke-width: 2;
+    marker-end: url(#arrow-green);
+}
+
+.link-unknown {
+    stroke: #000;
+    stroke-width: 2;
+}
+
+/* Ramps */
+.ramp {
+    stroke: #1565c0;
+    stroke-width: 3;
+    marker-end: url(#arrow-blue);
+}
+
+text {
+    font-size: 14px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    fill: #000;
+    pointer-events: none;
+}
+</style>
+</head>
+
+<body>
+
+<h2>AS PATH – ASPA Visualization</h2>
+
+<input id="asPathInput" type="text" placeholder="Example: 2121 2121 3333 174">
+<button onclick="draw()">Draw</button>
+
+<svg id="svg"></svg>
+
+<script>
+// ==============================
+// ASPA DATA
+// ==============================
+let aspaMap = new Map();
+
+async function loadAspaData() {
+    const response = await fetch("https://rpki-validator.ripe.net/json");
+    const data = await response.json();
+
+    data.aspas.forEach(entry => {
+        const customer = entry.customer.replace("AS", "");
+        const providers = entry.providers.map(p => p.replace("AS", ""));
+
+        if (!aspaMap.has(customer)) {
+            aspaMap.set(customer, new Set());
+        }
+        providers.forEach(p => aspaMap.get(customer).add(p));
+    });
+}
+
+function hasAspa(asn) {
+    return aspaMap.has(asn);
+}
+
+function getProviders(asn) {
+    return hasAspa(asn) ? Array.from(aspaMap.get(asn)) : [];
+}
+
+function isProvider(customer, provider) {
+    return hasAspa(customer) && aspaMap.get(customer).has(provider);
+}
+
+// Remove consecutive duplicates
+function normalizePath(path) {
+    return path.filter((as, i) => i === 0 || as !== path[i - 1]);
+}
+
+// ==============================
+// DRAWING
+// ==============================
+function draw() {
+    const svg = document.getElementById("svg");
+    svg.innerHTML = "";
+
+    const rawInput = document.getElementById("asPathInput").value.trim();
+    if (!rawInput) return;
+
+    const ases = normalizePath(rawInput.split(/\s+/));
+
+    const r = 25;
+    const spacing = 120;
+    const y = 170;
+    const rampY = 80;
+    const startX = 60;
+
+    // Markers
+    svg.innerHTML = `
+      <defs>
+        <marker id="arrow-green" viewBox="0 0 10 10"
+          refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#2e7d32"/>
+        </marker>
+        <marker id="arrow-blue" viewBox="0 0 10 10"
+          refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#1565c0"/>
+        </marker>
+      </defs>
+    `;
+
+    // --- Links & nodes ---
+    ases.forEach((as, i) => {
+        const x = startX + i * spacing;
+
+        if (i > 0) {
+            const prev = ases[i - 1];
+            const valid = isProvider(prev, as);
+
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", x - spacing + r);
+            line.setAttribute("y1", y);
+            line.setAttribute("x2", x - r);
+            line.setAttribute("y2", y);
+            line.setAttribute("class", valid ? "link-valid" : "link-unknown");
+            svg.appendChild(line);
+        }
+
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", x);
+        circle.setAttribute("cy", y);
+        circle.setAttribute("r", r);
+        circle.setAttribute(
+            "class",
+            `node ${hasAspa(as) ? "node-valid" : "node-unknown"}`
+        );
+
+        if (hasAspa(as)) {
+            const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+            title.textContent =
+                "Providers:\n" +
+                getProviders(as).map(p => "AS" + p).join("\n");
+            circle.appendChild(title);
+        }
+
+        svg.appendChild(circle);
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", x);
+        text.setAttribute("y", y);
+        text.textContent = as;
+        svg.appendChild(text);
+    });
+
+    // ==============================
+    // Down-ramp (left → right)
+    // ==============================
+    let downEndIndex = ases.length - 1;
+
+    for (let i = 0; i < ases.length - 1; i++) {
+        if (hasAspa(ases[i]) && !isProvider(ases[i], ases[i + 1])) {
+            downEndIndex = i;
+            break;
+        }
+    }
+
+    drawRamp(
+        startX,
+        startX + downEndIndex * spacing,
+        rampY
+    );
+
+    // ==============================
+    // Up-ramp (right → left)
+    // ==============================
+    let upStartIndex = 0;
+
+    for (let i = ases.length - 1; i > 0; i--) {
+        if (hasAspa(ases[i]) && !isProvider(ases[i], ases[i - 1])) {
+            upStartIndex = i;
+            break;
+        }
+    }
+
+    drawRamp(
+        startX + (ases.length - 1) * spacing,
+        startX + upStartIndex * spacing,
+        rampY
+    );
+}
+
+// Draw ramp arrow
+function drawRamp(x1, x2, y) {
+    const svg = document.getElementById("svg");
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", x1);
+    line.setAttribute("y1", y);
+    line.setAttribute("x2", x2);
+    line.setAttribute("y2", y);
+    line.setAttribute("class", "ramp");
+    svg.appendChild(line);
+}
+
+// Enter key
+document.getElementById("asPathInput").addEventListener("keydown", e => {
+    if (e.key === "Enter") draw();
+});
+
+loadAspaData();
+</script>
+
+</body>
+</html>

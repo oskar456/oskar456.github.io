@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>AS PATH – ASPA Visualization</title>
+<title>ASPA Path Viewer</title>
 
 <style>
 body {
@@ -11,271 +11,316 @@ body {
 }
 
 input {
-    width: 360px;
+    width: 480px;
     padding: 6px;
-    font-size: 14px;
 }
 
 button {
     padding: 6px 12px;
-    font-size: 14px;
-    margin-left: 8px;
 }
 
 svg {
-    margin-top: 30px;
+    margin-top: 20px;
     border: 1px solid #ccc;
     width: 100%;
-    height: 280px;
+    height: 260px;
 }
 
 /* Nodes */
-.node {
-    stroke: #333;
-    stroke-width: 2;
-}
-
 .node-valid {
     fill: #c8e6c9;
+    stroke: #2e7d32;
+    stroke-width: 2;
+    cursor: pointer;
 }
 
 .node-unknown {
     fill: #eeeeee;
+    stroke: #333;
+    stroke-width: 2;
+    cursor: pointer;
 }
 
 /* Links */
+.link-base {
+    stroke: #000;
+    stroke-width: 2;
+}
+
 .link-valid {
     stroke: #2e7d32;
     stroke-width: 2;
     marker-end: url(#arrow-green);
 }
 
-.link-unknown {
-    stroke: #000;
-    stroke-width: 2;
-}
-
-/* Ramps */
-.ramp {
-    stroke: #1565c0;
-    stroke-width: 3;
-    marker-end: url(#arrow-blue);
-}
-
-text {
+.legend {
+    margin-top: 10px;
     font-size: 14px;
-    text-anchor: middle;
-    dominant-baseline: middle;
-    fill: #000;
-    pointer-events: none;
 }
 </style>
 </head>
 
 <body>
 
-<h2>AS PATH – ASPA Visualization</h2>
+<h2>ASPA Path Viewer</h2>
 
-<input id="asPathInput" type="text" placeholder="Example: 2121 2121 3333 174">
+<input id="asPathInput" type="text"
+ placeholder="Example: 2121 3333 1136 6830 1299 17676 216211 44324 207529">
 <button onclick="draw()">Draw</button>
+
+<div class="legend">
+<b>Legend:</b>
+<span style="color:#2e7d32;">Green line → valid provider</span> |
+<span style="background:#c8e6c9;padding:2px 6px;border:1px solid #2e7d32;">
+AS has ASPA</span> |
+<span style="color:#1565c0;">← down ramp</span> |
+<span style="color:#8e24aa;">← up ramp</span>
+</div>
 
 <svg id="svg"></svg>
 
 <script>
-// ==============================
-// ASPA DATA
-// ==============================
 let aspaMap = new Map();
+let holderCache = new Map();
 
-async function loadAspaData() {
-    const response = await fetch("https://rpki-validator.ripe.net/json");
-    const data = await response.json();
-
-    data.aspas.forEach(entry => {
-        const customer = entry.customer.replace("AS", "");
-        const providers = entry.providers.map(p => p.replace("AS", ""));
-
-        if (!aspaMap.has(customer)) {
-            aspaMap.set(customer, new Set());
-        }
-        providers.forEach(p => aspaMap.get(customer).add(p));
+async function loadAspa() {
+    const r = await fetch("https://rpki-validator.ripe.net/json");
+    const d = await r.json();
+    d.aspas.forEach(e => {
+        const c = e.customer.replace("AS","");
+        const p = e.providers.map(x=>x.replace("AS",""));
+        aspaMap.set(c, new Set(p));
     });
 }
 
-function hasAspa(asn) {
-    return aspaMap.has(asn);
+async function getHolder(asn) {
+    if (holderCache.has(asn)) {
+        return holderCache.get(asn);
+    }
+
+    try {
+        const r = await fetch(
+            `https://stat.ripe.net/data/as-overview/data.json?resource=AS${asn}`
+        );
+        const d = await r.json();
+        const holder = d.data.holder || "Unknown";
+        holderCache.set(asn, holder);
+        return holder;
+    } catch {
+        holderCache.set(asn, "Unknown");
+        return "Unknown";
+    }
 }
 
-function getProviders(asn) {
-    return hasAspa(asn) ? Array.from(aspaMap.get(asn)) : [];
-}
+function hasAspa(a){ return aspaMap.has(a); }
+function isProvider(c,p){ return hasAspa(c) && aspaMap.get(c).has(p); }
+function normalize(p){ return p.filter((a,i)=>i===0||a!==p[i-1]); }
 
-function isProvider(customer, provider) {
-    return hasAspa(customer) && aspaMap.get(customer).has(provider);
-}
+async function draw(){
+    const svg=document.getElementById("svg");
 
-// Remove consecutive duplicates
-function normalizePath(path) {
-    return path.filter((as, i) => i === 0 || as !== path[i - 1]);
-}
+    svg.innerHTML=`
+    <defs>
+      <marker id="arrow-green"
+        markerWidth="8" markerHeight="8"
+        refX="8" refY="4"
+        orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#2e7d32"/>
+      </marker>
 
-// ==============================
-// DRAWING
-// ==============================
-function draw() {
-    const svg = document.getElementById("svg");
-    svg.innerHTML = "";
+      <marker id="arrow-blue"
+        markerWidth="8" markerHeight="8"
+        refX="0" refY="4"
+        orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#1565c0"/>
+      </marker>
 
-    const rawInput = document.getElementById("asPathInput").value.trim();
-    if (!rawInput) return;
-
-    const ases = normalizePath(rawInput.split(/\s+/));
-
-    const r = 25;
-    const spacing = 120;
-    const y = 170;
-    const rampY = 80;
-    const startX = 60;
-
-    // Markers
-    svg.innerHTML = `
-      <defs>
-        <marker id="arrow-green" viewBox="0 0 10 10"
-          refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-          <path d="M 0 0 L 10 5 L 0 10 z" fill="#2e7d32"/>
-        </marker>
-        <marker id="arrow-blue" viewBox="0 0 10 10"
-          refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-          <path d="M 0 0 L 10 5 L 0 10 z" fill="#1565c0"/>
-        </marker>
-      </defs>
+      <marker id="arrow-purple"
+        markerWidth="8" markerHeight="8"
+        refX="0" refY="4"
+        orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#8e24aa"/>
+      </marker>
+    </defs>
     `;
 
-    // --- Links & nodes ---
-    ases.forEach((as, i) => {
-        const x = startX + i * spacing;
+    const raw=document.getElementById("asPathInput").value.trim();
+    if(!raw) return;
 
-      if (i > 0) {
-    const left = ases[i - 1];
-    const right = ases[i];
+    const ases=normalize(raw.split(/\s+/));
 
-    const x1 = x - spacing + r;
-    const x2 = x - r;
+    const r=26;
+    const spacing=130;
+    const baseY=160;
+    const rampBaseY=80;
+    const startX=60;
 
-    // base line (always)
-    const base = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    base.setAttribute("x1", x1);
-    base.setAttribute("y1", y);
-    base.setAttribute("x2", x2);
-    base.setAttribute("y2", y);
-    base.setAttribute("class", "link-unknown");
-    svg.appendChild(base);
+    const nodeX = i => startX + i*spacing;
 
-    // left → right provider
-    if (isProvider(left, right)) {
-        const arrow = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        arrow.setAttribute("x1", x1);
-        arrow.setAttribute("y1", y);
-        arrow.setAttribute("x2", x2);
-        arrow.setAttribute("y2", y);
-        arrow.setAttribute("class", "link-valid");
-        svg.appendChild(arrow);
-    }
+    // --- LINKS ---
+    ases.forEach((as,i)=>{
+        const x=nodeX(i);
 
-    // right → left provider
-    if (isProvider(right, left)) {
-        const arrow = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        arrow.setAttribute("x1", x2);
-        arrow.setAttribute("y1", y);
-        arrow.setAttribute("x2", x1);
-        arrow.setAttribute("y2", y);
-        arrow.setAttribute("class", "link-valid");
-        svg.appendChild(arrow);
-    }
-}
+        if(i>0){
+            const prev=ases[i-1];
+            const x1=nodeX(i-1)+r;
+            const x2=x-r;
 
+            const base=document.createElementNS("http://www.w3.org/2000/svg","line");
+            base.setAttribute("x1",x1);
+            base.setAttribute("y1",baseY);
+            base.setAttribute("x2",x2);
+            base.setAttribute("y2",baseY);
+            base.setAttribute("class","link-base");
+            svg.appendChild(base);
 
-        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        circle.setAttribute("cx", x);
-        circle.setAttribute("cy", y);
-        circle.setAttribute("r", r);
-        circle.setAttribute(
-            "class",
-            `node ${hasAspa(as) ? "node-valid" : "node-unknown"}`
-        );
+            if(isProvider(prev,as)){
+                const fwd=base.cloneNode();
+                fwd.setAttribute("class","link-valid");
+                svg.appendChild(fwd);
+            }
 
-        if (hasAspa(as)) {
-            const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
-            title.textContent =
-                "Providers:\n" +
-                getProviders(as).map(p => "AS" + p).join("\n");
-            circle.appendChild(title);
+            if(isProvider(as,prev)){
+                const back=document.createElementNS("http://www.w3.org/2000/svg","line");
+                back.setAttribute("x1",x2);
+                back.setAttribute("y1",baseY);
+                back.setAttribute("x2",x1);
+                back.setAttribute("y2",baseY);
+                back.setAttribute("class","link-valid");
+                svg.appendChild(back);
+            }
         }
 
-        svg.appendChild(circle);
+        // --- NODE GROUP ---
+        const group=document.createElementNS("http://www.w3.org/2000/svg","g");
+        group.style.cursor="pointer";
 
-        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        text.setAttribute("x", x);
-        text.setAttribute("y", y);
-        text.textContent = as;
-        svg.appendChild(text);
+        group.addEventListener("click",()=>{
+            window.open(`https://stat.ripe.net/AS${as}`,"_blank");
+        });
+
+        const title=document.createElementNS("http://www.w3.org/2000/svg","title");
+        if (hasAspa(as)) {
+            title.textContent =
+                `AS${as}\nLoading holder...\nProviders:\n` +
+                [...aspaMap.get(as)].map(p=>"AS"+p).join("\n");
+        } else {
+            title.textContent =
+                `AS${as}\nLoading holder...`;
+        }
+        group.appendChild(title);
+
+        group.addEventListener("mouseenter", async () => {
+            if (title.dataset.loaded === "true") return;
+
+            const holder = await getHolder(as);
+
+            if (hasAspa(as)) {
+                title.textContent =
+                    `AS${as}\nHolder: ${holder}\nProviders:\n` +
+                    [...aspaMap.get(as)].map(p=>"AS"+p).join("\n");
+            } else {
+                title.textContent =
+                    `AS${as}\nHolder: ${holder}`;
+            }
+
+            title.dataset.loaded = "true";
+        });
+
+        const circle=document.createElementNS("http://www.w3.org/2000/svg","circle");
+        circle.setAttribute("cx",x);
+        circle.setAttribute("cy",baseY);
+        circle.setAttribute("r",r);
+        circle.setAttribute("class",hasAspa(as)?"node-valid":"node-unknown");
+        group.appendChild(circle);
+
+        const text=document.createElementNS("http://www.w3.org/2000/svg","text");
+        text.setAttribute("x",x);
+        text.setAttribute("y",baseY+1);
+        text.setAttribute("text-anchor","middle");
+        text.setAttribute("dominant-baseline","middle");
+        text.setAttribute("font-size","13");
+        text.textContent=as;
+        group.appendChild(text);
+
+        svg.appendChild(group);
     });
 
-    // ==============================
-    // Down-ramp (left → right)
-    // ==============================
-    let downEndIndex = ases.length - 1;
+    // =========================
+    //        UP RAMP
+    // =========================
+    let upEndIndex = ases.length-1;
 
-    for (let i = 0; i < ases.length - 1; i++) {
-        if (hasAspa(ases[i]) && !isProvider(ases[i], ases[i + 1])) {
-            downEndIndex = i;
+    for(let i=ases.length-1;i>0;i--){
+        const current=ases[i];
+        const left=ases[i-1];
+
+        if(hasAspa(current) && !isProvider(current,left)){
+            upEndIndex=i;
             break;
         }
+        upEndIndex=i-1;
     }
 
-    drawRamp(
-        startX,
-        startX + downEndIndex * spacing,
-        rampY
-    );
+    const upStartX = nodeX(ases.length-1);
+    const upEndX   = nodeX(upEndIndex);
 
-    // ==============================
-    // Up-ramp (right → left)
-    // ==============================
-    let upStartIndex = 0;
+    let drawUp = upStartX > upEndX;
 
-    for (let i = ases.length - 1; i > 0; i--) {
-        if (hasAspa(ases[i]) && !isProvider(ases[i], ases[i - 1])) {
-            upStartIndex = i;
+    // =========================
+    //       DOWN RAMP
+    // =========================
+    let downEndIndex = 0;
+
+    for(let i=0;i<ases.length-1;i++){
+        const current=ases[i];
+        const right=ases[i+1];
+
+        if(hasAspa(current) && !isProvider(current,right)){
+            downEndIndex=i;
             break;
         }
+        downEndIndex=i+1;
     }
 
-    drawRamp(
-        startX + (ases.length - 1) * spacing,
-        startX + upStartIndex * spacing,
-        rampY
-    );
+    const downEndX = nodeX(0);
+    const downStartX = nodeX(downEndIndex);
+
+    let drawDown = downStartX > downEndX;
+
+    // overlap detection
+    let overlap = drawUp && drawDown &&
+        !(upStartX < downEndX || downStartX < upEndX);
+
+    const upY   = overlap ? rampBaseY-15 : rampBaseY;
+    const downY = overlap ? rampBaseY+15 : rampBaseY;
+
+    if(drawUp){
+        drawRamp(upStartX, upEndX, upY, "arrow-purple", "#8e24aa");
+    }
+
+    if(drawDown){
+        drawRamp(downStartX, downEndX, downY, "arrow-blue", "#1565c0");
+    }
 }
 
-// Draw ramp arrow
-function drawRamp(x1, x2, y) {
-    const svg = document.getElementById("svg");
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", x1);
-    line.setAttribute("y1", y);
-    line.setAttribute("x2", x2);
-    line.setAttribute("y2", y);
-    line.setAttribute("class", "ramp");
-    svg.appendChild(line);
+function drawRamp(x1,x2,y,markerId,color){
+    const svg=document.getElementById("svg");
+    const l=document.createElementNS("http://www.w3.org/2000/svg","line");
+    l.setAttribute("x1",x1);
+    l.setAttribute("y1",y);
+    l.setAttribute("x2",x2);
+    l.setAttribute("y2",y);
+    l.setAttribute("stroke",color);
+    l.setAttribute("stroke-width","3");
+    l.setAttribute("marker-end",`url(#${markerId})`);
+    svg.appendChild(l);
 }
 
-// Enter key
-document.getElementById("asPathInput").addEventListener("keydown", e => {
-    if (e.key === "Enter") draw();
-});
+document.getElementById("asPathInput")
+.addEventListener("keydown",e=>{ if(e.key==="Enter") draw(); });
 
-loadAspaData();
+loadAspa();
 </script>
 
 </body>

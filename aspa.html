@@ -57,6 +57,27 @@ svg {
     margin-top: 10px;
     font-size: 14px;
 }
+
+.spinner {
+    font-family: sans-serif;
+    margin: 20px;
+}
+
+.spinner::after {
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-left: 8px;
+    border: 3px solid #bbb;
+    border-top-color: #333;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
 </style>
 </head>
 
@@ -64,8 +85,12 @@ svg {
 
 <h2>ASPA Path Viewer</h2>
 
+<a href="#path=2121-3333-1136-6830-1299-17676-216211-44324-207529">demo 1</a>
+<a href="#path=2121-3333-1136-6830-2852-1299-17676">demo 2</a>
+<a href="#path=2121-3333-1136-17676">demo 3</a>
+<br>
 <input id="asPathInput" type="text"
- placeholder="Example: 2121 3333 1136 6830 1299 17676 216211 44324 207529">
+ placeholder="Example: 2121 3333 1136 6830 17676">
 <button onclick="draw()">Draw</button>
 
 <div class="legend">
@@ -77,11 +102,26 @@ AS has ASPA</span> |
 <span style="color:#8e24aa;">← up ramp</span>
 </div>
 
+<div id="loading" class="spinner">Loading ASPA data…</div>
 <svg id="svg"></svg>
 
 <script>
 let aspaMap = new Map();
 let holderCache = new Map();
+
+function loadPathFromURL() {
+    const hash = window.location.hash;
+
+    if (hash.startsWith("#path=")) {
+        const decoded = hash.substring(6).replace(/-/g, " ");
+        const input = document.getElementById("asPathInput");
+
+        if (input.value !== decoded) {
+            input.value = decoded;
+            draw();
+        }
+    }
+}
 
 async function loadAspa() {
     const r = await fetch("https://rpki-validator.ripe.net/json");
@@ -146,6 +186,8 @@ async function draw(){
 
     const raw=document.getElementById("asPathInput").value.trim();
     if(!raw) return;
+    const encoded = raw.trim().replace(/\s+/g,"-");
+    history.replaceState(null, "", "#path=" + encoded);
 
     const ases=normalize(raw.split(/\s+/));
 
@@ -319,8 +361,12 @@ function drawRamp(x1,x2,y,markerId,color){
 
 document.getElementById("asPathInput")
 .addEventListener("keydown",e=>{ if(e.key==="Enter") draw(); });
+window.addEventListener("hashchange", loadPathFromURL);
 
-loadAspa();
+loadAspa().then(() => {
+    document.getElementById("loading").style.display = "none";
+    loadPathFromURL();
+});
 </script>
 
 </body>

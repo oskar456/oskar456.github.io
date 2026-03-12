@@ -113,7 +113,9 @@ function loadPathFromURL() {
     const hash = window.location.hash;
 
     if (hash.startsWith("#path=")) {
-        const decoded = hash.substring(6).replace(/-/g, " ");
+        const decoded = hash.substring(6)
+          .replace(/-/g," ")
+          .replace(/\bAS/gi,"");
         const input = document.getElementById("asPathInput");
 
         if (input.value !== decoded) {
@@ -184,12 +186,22 @@ async function draw(){
     </defs>
     `;
 
-    const raw=document.getElementById("asPathInput").value.trim();
+    const input = document.getElementById("asPathInput");
+    const raw = input.value.trim();
     if(!raw) return;
-    const encoded = raw.trim().replace(/\s+/g,"-");
-    history.replaceState(null, "", "#path=" + encoded);
 
-    const ases=normalize(raw.split(/\s+/));
+    // normalize tokens
+    const ases = normalize(
+        raw.split(/\s+/)
+           .map(a => a.replace(/^AS/i,""))
+    );
+
+    // rewrite the cleaned path back to the input field
+    const cleanedPath = ases.join(" ");
+    input.value = cleanedPath;
+
+    const encoded = cleanedPath.replace(/\s+/g,"-");
+    history.replaceState(null, "", "#path=" + encoded);
 
     const r=26;
     const spacing=130;

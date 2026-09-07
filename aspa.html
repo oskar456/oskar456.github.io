@@ -96,8 +96,8 @@ svg {
 <span style="color:#2e7d32;">Green line → valid provider</span> |
 <span style="background:#c8e6c9;padding:2px 6px;border:1px solid #2e7d32;">
 AS has ASPA</span> |
-<span style="color:#1565c0;">← down ramp</span> |
-<span style="color:#8e24aa;">← up ramp</span>
+<span style="color:#f26738;">down ramp →</span> |
+<span style="color:#25316a;">← up ramp</span>
 </div>
 
 <div id="loading" class="spinner">Loading ASPA data…</div>
@@ -169,18 +169,18 @@ async function draw(){
         <path d="M0,0 L8,4 L0,8 Z" fill="#2e7d32"/>
       </marker>
 
-      <marker id="arrow-blue"
+      <marker id="arrow-down"
         markerWidth="8" markerHeight="8"
         refX="0" refY="4"
         orient="auto">
-        <path d="M0,0 L8,4 L0,8 Z" fill="#1565c0"/>
+        <path d="M0,0 L8,4 L0,8 Z" fill="#f26738"/>
       </marker>
 
-      <marker id="arrow-purple"
+      <marker id="arrow-up"
         markerWidth="8" markerHeight="8"
         refX="0" refY="4"
         orient="auto">
-        <path d="M0,0 L8,4 L0,8 Z" fill="#8e24aa"/>
+        <path d="M0,0 L8,4 L0,8 Z" fill="#25316a"/>
       </marker>
     </defs>
     `;
@@ -339,24 +339,24 @@ async function draw(){
         downEndIndex=i+1;
     }
 
-    const downEndX = nodeX(0);
-    const downStartX = nodeX(downEndIndex);
+    const downStartX = nodeX(0);
+    const downEndX = nodeX(downEndIndex);
 
-    let drawDown = downStartX > downEndX;
+    let drawDown = downEndX > downStartX;
 
     // overlap detection
     let overlap = drawUp && drawDown &&
-        !(upStartX < downEndX || downStartX < upEndX);
+        !(upStartX < downStartX || downEndX < upEndX);
 
     const upY   = overlap ? rampBaseY-15 : rampBaseY;
     const downY = overlap ? rampBaseY+15 : rampBaseY;
 
     if(drawUp){
-        drawRamp(upStartX, upEndX, upY, "arrow-purple", "#8e24aa");
+        drawRamp(upStartX, upEndX, upY, "arrow-up", "#25316a");
     }
 
     if(drawDown){
-        drawRamp(downStartX, downEndX, downY, "arrow-blue", "#1565c0");
+        drawRamp(downStartX, downEndX, downY, "arrow-down", "#f26738");
     }
 }
 
